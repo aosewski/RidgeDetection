@@ -1,0 +1,87 @@
+
+/**
+ * @brief Here you will find some common bugs and/or errors I make.
+ */
+
+//-----------------------------------------------------------------------------------
+// 1) Passing a local pointer to child kernel!
+//-----------------------------------------------------------------------------------
+
+/*
+ * @Overview This lambda function is passed to spatial histogram kernel, where it's used to map point
+ * coordinates onto bin index.
+ */
+
+auto nHistDecodeOp = [nodes, nodesCnt, this](
+    SampleT point[DIM],
+    int *   d_histogram) 
+{
+    for (int n = 0; n < nodesCnt; ++n)
+    {
+        if (nodes[n].bounds.isNearby(point, this->extFactor))
+        {
+            atomicAdd(d_histogram + n, 1);
+        }
+    }
+};
+
+/*
+ * @ProblemDescription
+ * In this form it is easy to pass `this` pointer to local variable as a parameter to child kernel.
+ * This may easily happen when you have a class, which is a member variable of another class and 
+ * whithin which you define such labmda function. Then `this` pointer is pointing to thread private,
+ * local memory region, invisible to other threads, esspecially those launched in new child kernel!
+ * Thus such situation is prohibitet. It leads to undefined behaviour or memory violation.
+ * In this example `cuda-memcheck` generates following error:
+ * 
+ *      ========= Invalid __global__ read of size 4
+ *      
+ * @ProblemSolution 
+ * To fix such an error we may define local variable which we initialize with desired value.
+ */
+
+T localVar = this->extFactor;
+auto nHistDecodeOp = [nodes, nodesCnt, localVar](
+    SampleT point[DIM],
+    int *   d_histogram) 
+{
+    for (int n = 0; n < nodesCnt; ++n)
+    {
+        if (nodes[n].bounds.isNearby(point, localVar))
+        {
+            atomicAdd(d_histogram + n, 1);
+        }
+    }
+};
+
+
+//-----------------------------------------------------------------------------------
+// 2) cuda-memcheck dynamic runtime API errors
+//-----------------------------------------------------------------------------------
+
+/**
+ * @Overview
+ * Under some circumstances, cuda-memcheck reports false-positive errors in cuda dynamic runtime
+ * api calls such as cudaMemsetAsync or cudaMalloc etc., or when trying to pass device built-in 
+ * variables i.e. threadIdx, blockIdx.
+ * 
+ * @ProblemDescription
+ * Described problem usually takes place when calling aforementioned functions, or reading 
+ * aforementioned variables inside __device__ functions called from inside some nested kernel fun-
+ * ctions. Moreover this happens only when compiling in 'debug' mode, that is when passing `-G` flag
+ * to `nvcc` compiler. Cuda memcheck usually reports error:
+ * 
+ *      ========= Invalid __local__ read of size 4
+ *      
+ * @ProblemSolution
+ * Compiling without `-G` (device debug code information) flag, and not printf'ing threadIdx or 
+ * other built-in device variables.
+ */
+
+
+//-----------------------------------------------------------------------------------
+// 3) cuda-memcheck: 'User stack overflow or breakpoint hit' (...) Invalid __local__ write of size 4
+//-----------------------------------------------------------------------------------
+
+
+

@@ -1,0 +1,314 @@
+
+rm gcc g++ cpp
+ln -s gcc-4.9 gcc
+ln -s g++-4.9 g++
+ln -s cpp-4.9 cpp
+
+//---------------------- TAGS -----------------------------
+
+	@@ Which branches contains my_tag ?
+		git branch -r --contains <my_tag>
+
+	@@ List all remote tags
+		git ls-remote --tags origin
+
+	@@ Push tag to remote server
+		git push origin <tag_name>
+
+
+//---------------------- BRANCH -----------------------------
+
+	@$ clone only single branch from repository, and only HEAD revision:
+	$ git clone --depth 1 -b master --single-branch git://git.code.sf.net/p/ridgedetection/code
+
+	@@ seup remote repository and fetch all remote branches and tags 
+
+	$ git remote add origin ssh://hurrin@git.code.sf.net/p/ridgedetection/code
+	$ git fetch origin
+		
+	@@ Creating a feature branch 
+		When starting work on a new feature, branch off from the develop branch.
+		$ git checkout -b myfeature develop
+
+	@@ Incorporating a finished feature on develop 
+		Finished features may be merged into the develop branch definitely add them
+		to the upcoming release:
+
+		$ git checkout develop
+			Switched to branch 'develop'
+		$ git merge --no-ff myfeature
+			Updating ea1b82a..05e9557
+			(Summary of changes)
+		$ git branch -d myfeature
+			Deleted branch myfeature (was 05e9557).
+		$ git push origin develop
+
+	@@ push out new local branch
+
+		$ git push --set-upstream origin <branch_name>
+
+	@@ If you wish to set tracking information for this branch you can do so with:
+
+	    git branch --set-upstream-to=origin/<branch> task-11
+
+
+	@@ Delete remote branch:
+		git push origin --delete <branch_name>
+
+	@@ Delete local branch
+		git branch --delete <branch>
+
+	@@ View just remote-tracking branches
+		git branch --remotes 
+		git branch -r
+
+	@@ View bot strictly local as well as remote-tracking branches
+		git branch --all
+		git branch -a
+
+	@@ applay changes from another branch to current
+		
+		git checkout -p <other_branch_name>
+
+	-- here starts interactive mode where we decide which hunks we want to apply
+
+	y - stage this hunk
+	n - do not stage this hunk
+	q - quit; do not stage this hunk or any of the remaining ones
+	a - stage this hunk and all later hunks in the file
+	d - do not stage this hunk or any of the later hunks in the file
+	g - select a hunk to go to
+	/ - search for a hunk matching the given regex
+	j - leave this hunk undecided, see next undecided hunk
+	J - leave this hunk undecided, see next hunk
+	k - leave this hunk undecided, see previous undecided hunk
+	K - leave this hunk undecided, see previous hunk
+	s - split the current hunk into smaller hunks
+	e - manually edit the current hunk
+	? - print help
+			
+	@@  $ git push origin --delete task-21
+		  Password: 
+		  error: unable to delete 'task-21': remote ref does not exist
+
+		SOLUTION: prune local branch cache:
+
+		$git fetch -p origin 
+		 Password: 
+		 From ssh://git.code.sf.net/p/ridgedetection/code
+		  x [deleted]         (none)     -> origin/task-21
+		  x [deleted]         (none)     -> origin/task-22
+
+
+//---------------------- COMMITS -----------------------------
+
+	@@ removes last commit and resets index tree, but leave changes. In result commited changes wont be 
+	now staged
+		git reset --mixed HEAD^
+	@@ this removes last three comits	
+		git reset --mixed HEAD~3 
+	@@ soft version preserves changes staged for comit (wont reset index tree)
+		git reset --soft HEAD^
+
+	@@ This will unstage all files you might have staged with git add:
+
+		git reset
+
+	@@ This will revert all local uncommitted changes (should be executed in repo root):
+
+		git checkout .
+
+	@@ You can also revert uncommitted changes only to particular file or directory:
+
+		git checkout [some_dir|file.txt]
+
+	@@ Yet another way to revert all uncommitted changes (longer to type, but works from any subdirectory):
+
+	git reset --hard HEAD
+
+	@@ This will remove all local untracked files, so only git tracked files remain:
+
+	git clean -fdx
+
+	WARNING: -x will also remove all ignored files!
+	UWAGA!!! -> samym -fd wywaliłem sobie wszystkie wykresy w 'nieśledzonych' folderach ;/
+
+	To sum it up: executing commands below is basically equivalent to fresh git clone from original source (but it does not re-download anything, so is much faster):
+
+	git reset
+	git checkout .
+	git clean -fdx
+
+	Typical usage for this would be in build scripts, when you must make sure that your tree is absolutely clean - does not have any modifications or locally created object files or build artefacts, and you want to make it work very fast and to not re-clone whole repository every single time.
+
+	@@ apply commit from one branch to another:
+		$ git checkout <dst_branch>
+		$ git cherry-pick <comit_ref>
+
+		$ git log branchx  # to find out the ID of the commit to merge back
+		$ git cherry-pick <commit ID from branchx>
+
+	to obtain branch top commit revision one can use:
+		$ git describe
+
+	@@ Alternative, you can pick some files to merge back using
+
+		# from branch master do
+		$ git checkout branchx file1 file2 file3
+
+	@@ You will want to verify that you in fact aren't missing any vital commits:
+
+	git log --graph --left-right --cherry-pick --oneline master...experiment
+
+	This will give you a list of any nonshared between the branches. In case you are curious, there might be a difference without --cherry-pick and this difference could well be the reason for the warning you get:
+
+	@@ unmerged commits between branches:
+		$ git log task-9 ^release --no-merges
+
+	@@ delete selected old commit
+
+	If you truly wish to delete them (wiping them from history, never to be seen any more), you can
+
+	run rebase:
+
+		$ git rebase -i HEAD~4
+
+	and then, just delete (or comment out) the lines corresponding to the commits you wish to delete, like so:
+
+	pick 2f05aba ... #will be preserved
+	#pick 3371cec ... #will be deleted
+	#pick daed25c ... #will be deleted
+	pick e2b2a84 ... #will be preserved
+
+
+	@@ show changed files in commit
+
+		$ git show --format=short --name-status <commit>
+
+	@@ To selectively merge files from one branch into another branch, run
+
+		$ git merge --no-ff --no-commit branchX
+
+	where: branchX is the branch you want to merge from into the current branch
+
+	The --no-commit option will stage the files that have been merged by Git without actually committing them. This will give you the opportunity to modify the merged files however you want to and then commit them yourself.
+
+	Depending on how you want to merge files, there are four cases:
+
+	1) You want a true merge. In this case, you accept the merged files the way Git merged them automatically and then commit them.
+
+	2) There are some files you don't want to merge. For example, you want to retain the version in the current branch and ignore the version in the branch you are merging from.
+
+	To select the version in the current branch, run:
+
+	$ git checkout HEAD file1
+
+	This will retrieve the version of file1 in the current branch and overwrite the file automerged by Git.
+
+	3) If you want the version in branchX (and not a true merge), run:
+
+	$ git checkout branchX file1
+
+	This will retrieve the version of file1 in branchX and overwrite the file auto-merged by Git.
+
+	4) The last case is if you want to select only specific merges in file1. In this case, you can edit the modified file1 directly, update it to whatever you'd want the version of file1 to become, and then commit.
+
+//------------------- STASHING -------------------------------
+
+	Stashing
+	Often, when you’ve been working on part of your project, things are in a messy state and you want to switch branches for a bit to work on something else. The problem is, you don’t want to do a commit of half-done work just so you can get back to this point later. The answer to this issue is the git stash command.
+
+	Stashing takes the dirty state of your working directory — that is, your modified tracked files and staged changes — and saves it on a stack of unfinished changes that you can reapply at any time.
+
+	@@ puts all uncommitted changes on stack
+		git stash
+
+	@@ list stashes
+		git stash list
+
+	@@ reapply the most recent stash
+		git stash apply
+
+	@@ reapply the specific one
+		git stash apply stash@{<stash_number>}
+
+	@@ remove specific stash
+		git stash drop stash@{<stash_number>}
+
+	@@ creating a branch from stash
+		git stash branch <branch_name>
+
+	@@ stashing also untracked files
+		git stash --include-untracked
+		git stash -u
+	WARNING: this may delete your ignored files...
+
+		or:
+		git add <untracked_files>
+		git stash
+
+	@@ apply only specific file(s) folder(s)
+
+		$git checkout stash@{N} <File(s)/Folder(s) path> 
+
+	@@ apply specific file(s) from untracked stashed files (these are not visible in stash show!)
+
+
+	git stash internally creates special black magic merge commits to store different parts of your changes. The merge commit has the original base commit (what you had at the top of the branch when you stashed) as its first parent, a throwaway commit representing the index contents at time of stashing as its second parent, and (only if you used --include-untracked) a throwaway commit containing the untracked files as its third parent.
+
+	So, the merge commit references the untracked files (as one of its parents)... but it doesn't actually include those files in its own tree (if that doesn't make any sense, either you've got a few things to learn yet about Git's internals... or you know too much about merge commits and this whole construct just seems too horrible to think about ;)).
+
+	In short... to access the untracked parts of your stash, access its third parent: git checkout stash@{0}^3 -- filename
+
+
+	@@ You can view just the "untracked" portion of the stash via:
+
+		git show stash@{0}^3
+
+	@@ or, just the "untracked" tree itself, via:
+
+		git show stash@{0}^3:
+
+	@@ or, a particular "untracked" file in the tree, via:
+
+		git show stash@{0}^3:<path/to/file>
+
+
+//---------------- REPAIR PERMISSIONS-----------------------------------
+
+	Problem:
+
+	git push -u origin bugfix-1
+	Password: 
+	Counting objects: 74, done.
+	Delta compression using up to 8 threads.
+	Compressing objects: 100% (16/16), done.
+	Writing objects: 100% (17/17), 2.02 KiB | 0 bytes/s, done.
+	Total 17 (delta 10), reused 0 (delta 0)
+	error: insufficient permission for adding an object to repository database ./objects
+
+	fatal: failed to write object
+	error: unpack failed: unpack-objects abnormal exit
+	To ssh://hurrin@git.code.sf.net/p/ridgedetection/code
+	 ! [remote rejected] bugfix-1 -> bugfix-1 (n/a (unpacker error))
+	error: failed to push some refs to 'ssh://hurrin@git.code.sf.net/p/ridgedetection/code'
+
+
+	solve:
+
+	cd /path/to/repo.git
+	chgrp -R groupname .
+	chmod -R g+rwX .
+	find . -type d -exec chmod g+s '{}' +
+
+	UNDERLAYING CAUSES:
+	The repository isn't configured to be a shared repository (see core.sharedRepository in git help config). If the output of:
+
+	git config core.sharedRepository
+	is not group or true or 1 or some mask, try running:
+
+	git config core.sharedRepository group
+	and then re-run the recursive chmod and chgrp (see "Repair Permissions" above). 
+
+
+
