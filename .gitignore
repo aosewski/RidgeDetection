@@ -93,7 +93,11 @@
 # exclude nvidia visual profiler logs
 *.nvvp
 
+# documentation files
+!/ridge_detection/doc/**
+
 # exclude gnuplot scripts and data files
+*gnuplot_data*
 *.py
 *.ps
 *.dat
