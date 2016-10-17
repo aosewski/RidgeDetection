@@ -132,6 +132,9 @@
 /ridge_detection/tests/test_partition/timings/*
 /ridge_detection/tests/test_find_bounds/timings/*
 
+# documentation files
+!/ridge_detection/doc/**
+
 *gnuplot_data*
 *.py
 *.gp
