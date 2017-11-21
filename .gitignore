@@ -96,15 +96,12 @@
 # documentation files
 !/ridge_detection/doc/**
 
-# exclude gnuplot scripts and data files
+# exclude gnuplot data files
 *gnuplot_data*
 *.py
 *.ps
 *.dat
 *.png
-*.gp
-*.plt
-*.gnu
 **/gnuplot_data/*.txt
 
 # exclude benchmark results logs
